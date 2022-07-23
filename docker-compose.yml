@@ -1,0 +1,33 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:latest
+    container_name: eco-monitor-postgres
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=eco_monitor
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    image: eco-monitor-system-api
+    container_name: eco-monitor-service
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_SOURCE=postgresql://root:secret@postgres:5432/eco_monitor?sslmode=disable
+    depends_on:
+      - postgres
+    entrypoint: ["/app/wait-for.sh", "postgres:5432", "--", "/app/start.sh"]
+    command: ["/app/main"]
+networks:
+  default:
+    external:
+      name: spd-network
+
+volumes: 
+    pgdata:
